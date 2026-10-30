@@ -20,7 +20,7 @@ import {getAuth,signInAnonymously,signInWithCustomToken,signOut} from "https://w
 import {getFirestore,doc,collection,query,orderBy,limit,onSnapshot} from "https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js";
 import {getFunctions,httpsCallable} from "https://www.gstatic.com/firebasejs/11.10.0/firebase-functions.js";
 import {firebaseConfig} from "./firebase-config.js";
-const $=id=>document.getElementById(id),app=initializeApp(firebaseConfig),auth=getAuth(app),db=getFirestore(app),functions=getFunctions(app),call=n=>httpsCallable(functions,n);
+const $=id=>document.getElementById(id),app=initializeApp(firebaseConfig),auth=getAuth(app),db=getFirestore(app),functions=getFunctions(app,"asia-southeast1"),call=n=>httpsCallable(functions,n);
 let sessionId=new URLSearchParams(location.search).get("session"),sessionUnsub=null,countsUnsub=null,num="0";
 const show=(id,v)=>$(id).classList.toggle("hidden",!v),status=(id,msg,kind="")=>{$(id).textContent=msg;$(id).className="status "+kind;},validId=v=>typeof v==="string"&&/^[A-Za-z0-9_-]{12,80}$/.test(v);
 function stop(){if(sessionUnsub)sessionUnsub();if(countsUnsub)countsUnsub();sessionUnsub=countsUnsub=null;}
