@@ -1,0 +1,14 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function signedIn() { return request.auth != null; }
+    function isTeacher() { return signedIn() && request.auth.token.teacher == true; }
+    function isSessionMember(id) { return signedIn() && exists(/databases/$(database)/documents/sessions/$(id)/members/$(request.auth.uid)); }
+    match /sessions/{id} {
+      allow get: if isTeacher() || isSessionMember(id);
+      allow list, create, update, delete: if false;
+      match /members/{uid} { allow read, write: if false; }
+      match /answerCounts/{answerId} { allow read: if isTeacher(); allow write: if false; }
+    }
+  }
+}

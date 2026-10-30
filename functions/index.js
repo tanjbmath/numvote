@@ -1,0 +1,23 @@
+const {onCall,HttpsError}=require("firebase-functions/v2/https");
+const {defineSecret}=require("firebase-functions/params");
+const {initializeApp}=require("firebase-admin/app");
+const {getAuth}=require("firebase-admin/auth");
+const {getFirestore,FieldValue}=require("firebase-admin/firestore");
+const crypto=require("node:crypto");
+initializeApp();
+const db=getFirestore(),pinSecret=defineSecret("TEACHER_PIN"),REGION="asia-southeast1",TEACHER_UID="numvote-teacher";
+function teacher(r){if(!r.auth||r.auth.uid!==TEACHER_UID||r.auth.token.teacher!==true)throw new HttpsError("permission-denied","Teacher access required.");}
+function signed(r){if(!r.auth)throw new HttpsError("unauthenticated","Sign in is required.");}
+function validId(v){return typeof v==="string"&&/^[A-Za-z0-9_-]{12,80}$/.test(v);}
+function answerId(v){return crypto.createHash("sha256").update(v).digest("hex");}
+exports.loginTeacher=onCall({region:REGION,secrets:[pinSecret]},async r=>{
+ const pin=typeof r.data?.pin==="string"?r.data.pin:"",ip=String(r.rawRequest?.ip||"unknown"),key=crypto.createHash("sha256").update(ip).digest("hex"),ref=db.doc("numvotePrivate/pinAttempts_"+key),now=Date.now();
+ const allowed=await db.runTransaction(async tx=>{const s=await tx.get(ref),d=s.exists?s.data():{},start=d.windowStart||now,n=now-start>900000?0:(d.attempts||0);if(n>=8)return false;if(pin!==pinSecret.value())tx.set(ref,{windowStart:n===0?now:start,attempts:n+1,updatedAt:FieldValue.serverTimestamp()});else tx.delete(ref);return true;});
+ if(!allowed)throw new HttpsError("resource-exhausted","Too many attempts. Try again later.");
+ if(pin!==pinSecret.value())throw new HttpsError("permission-denied","Incorrect PIN.");
+ return {token:await getAuth().createCustomToken(TEACHER_UID,{teacher:true})};
+});
+exports.createSession=onCall({region:REGION},async r=>{teacher(r);const id=crypto.randomBytes(18).toString("base64url");await db.doc("sessions/"+id).create({questionText:"",showQuestion:true,acceptResponses:true,totalAnswers:0,createdAt:FieldValue.serverTimestamp(),updatedAt:FieldValue.serverTimestamp()});return {sessionId:id};});
+exports.joinSession=onCall({region:REGION},async r=>{signed(r);if(r.auth.token.teacher===true)throw new HttpsError("permission-denied","Teacher accounts cannot join as students.");const id=r.data?.sessionId;if(!validId(id))throw new HttpsError("invalid-argument","Invalid session link.");const sr=db.doc("sessions/"+id),mr=sr.collection("members").doc(r.auth.uid);await db.runTransaction(async tx=>{const s=await tx.get(sr);if(!s.exists)throw new HttpsError("not-found","Session not found.");tx.set(mr,{joinedAt:FieldValue.serverTimestamp()},{merge:true});});return {joined:true};});
+exports.updateSession=onCall({region:REGION},async r=>{teacher(r);const id=r.data?.sessionId;if(!validId(id))throw new HttpsError("invalid-argument","Invalid session.");const d=r.data||{},u={};if(Object.prototype.hasOwnProperty.call(d,"questionText")){if(typeof d.questionText!=="string"||d.questionText.length>500)throw new HttpsError("invalid-argument","Question must be 500 characters or fewer.");u.questionText=d.questionText.trim();}for(const k of ["showQuestion","acceptResponses"])if(Object.prototype.hasOwnProperty.call(d,k)){if(typeof d[k]!=="boolean")throw new HttpsError("invalid-argument","Invalid setting.");u[k]=d[k];}if(!Object.keys(u).length)throw new HttpsError("invalid-argument","No settings supplied.");u.updatedAt=FieldValue.serverTimestamp();await db.doc("sessions/"+id).update(u);return {updated:true};});
+exports.submitAnswer=onCall({region:REGION},async r=>{signed(r);if(r.auth.token.teacher===true)throw new HttpsError("permission-denied","Teacher accounts cannot submit answers.");const id=r.data?.sessionId,a=r.data?.answer;if(!validId(id))throw new HttpsError("invalid-argument","Invalid session.");if(typeof a!=="string"||!/^(?:-?(?:0|[1-9]\d{0,8})(?:\.\d{1,8})?|YES|NO)$/.test(a))throw new HttpsError("invalid-argument","Invalid answer.");const sr=db.doc("sessions/"+id),mr=sr.collection("members").doc(r.auth.uid),cr=sr.collection("answerCounts").doc(answerId(a));await db.runTransaction(async tx=>{const [s,m,c]=await Promise.all([tx.get(sr),tx.get(mr),tx.get(cr)]);if(!s.exists||!m.exists)throw new HttpsError("permission-denied","You have not joined this session.");if(s.data().acceptResponses!==true)throw new HttpsError("failed-precondition","Responses are currently disabled.");tx.set(cr,{answer:a,count:(c.exists?c.data().count:0)+1,updatedAt:FieldValue.serverTimestamp()});tx.update(sr,{totalAnswers:FieldValue.increment(1),updatedAt:FieldValue.serverTimestamp()});});return {accepted:true};});
