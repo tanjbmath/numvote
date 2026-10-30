@@ -40,4 +40,15 @@ exports.resetSession=onCall({region:REGION,invoker:"public",timeoutSeconds:540,m
   throw new HttpsError("internal","Response reset did not complete. Check the session data before trying again.");
  }
 });
+exports.deleteAllData=onCall({region:REGION,invoker:"public",timeoutSeconds:540,memory:"512MiB"},async r=>{
+ teacher(r);
+ if(r.data?.confirmation!=="DELETE ALL NUMVOTE DATA")throw new HttpsError("failed-precondition","Confirmation phrase does not match.");
+ const sessions=await db.collection("sessions").get();
+ let deleted=0;
+ for(const session of sessions.docs){
+  await db.recursiveDelete(session.ref);
+  deleted++;
+ }
+ return {deleted:true,sessionsDeleted:deleted};
+});
 exports.submitAnswer=onCall({region:REGION,invoker:"public"},async r=>{signed(r);if(r.auth.token.teacher===true)throw new HttpsError("permission-denied","Teacher accounts cannot submit answers.");const id=r.data?.sessionId,a=r.data?.answer;if(!validId(id))throw new HttpsError("invalid-argument","Invalid session.");if(typeof a!=="string"||!/^(?:-?(?:0|[1-9]\d{0,8})(?:\.\d{1,8})?|YES|NO)$/.test(a))throw new HttpsError("invalid-argument","Invalid answer.");const sr=db.doc("sessions/"+id),mr=sr.collection("members").doc(r.auth.uid),cr=sr.collection("answerCounts").doc(answerId(a));await db.runTransaction(async tx=>{const [s,m,c]=await Promise.all([tx.get(sr),tx.get(mr),tx.get(cr)]);if(!s.exists||!m.exists)throw new HttpsError("permission-denied","You have not joined this session.");if(m.data().answered===true)throw new HttpsError("already-exists","You have already responded.");if(s.data().resetting===true)throw new HttpsError("failed-precondition","Session reset is in progress.");if(s.data().acceptResponses!==true)throw new HttpsError("failed-precondition","Responses are currently disabled.");tx.update(mr,{answered:true,answeredAt:FieldValue.serverTimestamp()});tx.set(cr,{answer:a,count:(c.exists?c.data().count:0)+1,updatedAt:FieldValue.serverTimestamp()});tx.update(sr,{totalAnswers:FieldValue.increment(1),updatedAt:FieldValue.serverTimestamp()});});return {accepted:true};});
