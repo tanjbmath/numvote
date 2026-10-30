@@ -1,0 +1,490 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Math Classroom Response Tool</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome for Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Chart.js for Teacher Visualizations -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+        /* Custom Keypad Press Animation */
+        .key-btn {
+            transition: all 0.08s ease;
+            touch-action: manipulation;
+        }
+        .key-btn:active {
+            transform: scale(0.93);
+            box-shadow: inset 0 2px 4px rgba(0,0,0,0.2);
+        }
+        /* Smooth transitions */
+        .tab-content {
+            transition: opacity 0.2s ease-in-out;
+        }
+    </style>
+</head>
+<body class="bg-slate-900 text-slate-100 min-h-screen flex flex-col justify-between">
+
+    <!-- Header Navigation -->
+    <header class="bg-slate-800/80 backdrop-blur border-b border-slate-700 sticky top-0 z-50">
+        <div class="max-w-5xl mx-auto px-4 py-3 flex justify-between items-center">
+            <div class="flex items-center gap-3">
+                <div class="bg-indigo-600 p-2.5 rounded-xl shadow-lg text-white">
+                    <i class="fa-solid me-1 fa-calculator text-xl"></i>
+                </div>
+                <div>
+                    <h1 class="text-lg font-bold leading-none text-white">MathPad Live</h1>
+                    <span class="text-xs text-indigo-400 font-medium">Anonymous Student Response</span>
+                </div>
+            </div>
+
+            <!-- Role Switcher -->
+            <div class="flex bg-slate-900/80 p-1 rounded-xl border border-slate-700">
+                <button id="mode-student-btn" onclick="switchMode('student')" class="px-4 py-1.5 rounded-lg text-sm font-semibold transition-all bg-indigo-600 text-white shadow-md">
+                    <i class="fa-solid fa-user-graduate mr-1.5"></i>Student
+                </button>
+                <button id="mode-teacher-btn" onclick="switchMode('teacher')" class="px-4 py-1.5 rounded-lg text-sm font-semibold transition-all text-slate-400 hover:text-slate-200">
+                    <i class="fa-solid fa-chalkboard-user mr-1.5"></i>Teacher Dashboard
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content Container -->
+    <main class="max-w-md w-full mx-auto p-4 flex-grow flex flex-col justify-center">
+
+        <!-- ========================================================================= -->
+        <!-- STUDENT VIEW -->
+        <!-- ========================================================================= -->
+        <div id="student-view" class="w-full space-y-4">
+
+            <!-- Active Question / Prompt Banner -->
+            <div class="bg-slate-800/90 rounded-2xl p-4 border border-slate-700/80 shadow-xl text-center relative overflow-hidden">
+                <div class="flex justify-between items-center text-xs font-semibold text-slate-400 mb-1">
+                    <span class="flex items-center gap-1.5">
+                        <span class="inline-block w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                        CONNECTED: <span id="current-room-display" class="text-indigo-400 font-bold">ROOM 101</span>
+                    </span>
+                    <span id="response-status" class="bg-slate-700 text-slate-300 px-2 py-0.5 rounded-full text-[10px]">READY</span>
+                </div>
+                <div id="current-question-text" class="text-lg font-semibold text-slate-100 my-1 min-h-[1.75rem] flex items-center justify-center">
+                    Waiting for teacher's question...
+                </div>
+                <div id="submitted-badge" class="hidden mt-2 inline-flex items-center gap-1.5 text-xs font-bold text-emerald-400 bg-emerald-950/60 border border-emerald-800/50 px-3 py-1 rounded-full">
+                    <i class="fa-solid fa-circle-check"></i> Answer Sent Anonymously
+                </div>
+            </div>
+
+            <!-- Display / Input Box -->
+            <div class="bg-slate-950 border-2 border-slate-700 rounded-2xl p-4 shadow-2xl text-right relative overflow-hidden">
+                <div class="text-xs text-slate-500 font-mono uppercase tracking-wider mb-1">Your Input</div>
+                <div id="student-input" class="text-4xl font-mono font-bold tracking-wider text-indigo-300 h-12 flex items-center justify-end overflow-x-auto whitespace-nowrap">
+                    0
+                </div>
+            </div>
+
+            <!-- Answer Buttons Container -->
+            <div class="bg-slate-800/50 p-4 rounded-2xl border border-slate-700/50 shadow-xl space-y-3">
+                
+                <!-- Main Numpad Grid -->
+                <div class="grid grid-cols-3 gap-2.5">
+                    <button onclick="pressKey('7')" class="key-btn bg-slate-700 hover:bg-slate-600 active:bg-indigo-600 text-slate-100 font-bold text-2xl py-3.5 rounded-xl shadow-md border border-slate-600/50">7</button>
+                    <button onclick="pressKey('8')" class="key-btn bg-slate-700 hover:bg-slate-600 active:bg-indigo-600 text-slate-100 font-bold text-2xl py-3.5 rounded-xl shadow-md border border-slate-600/50">8</button>
+                    <button onclick="pressKey('9')" class="key-btn bg-slate-700 hover:bg-slate-600 active:bg-indigo-600 text-slate-100 font-bold text-2xl py-3.5 rounded-xl shadow-md border border-slate-600/50">9</button>
+
+                    <button onclick="pressKey('4')" class="key-btn bg-slate-700 hover:bg-slate-600 active:bg-indigo-600 text-slate-100 font-bold text-2xl py-3.5 rounded-xl shadow-md border border-slate-600/50">4</button>
+                    <button onclick="pressKey('5')" class="key-btn bg-slate-700 hover:bg-slate-600 active:bg-indigo-600 text-slate-100 font-bold text-2xl py-3.5 rounded-xl shadow-md border border-slate-600/50">5</button>
+                    <button onclick="pressKey('6')" class="key-btn bg-slate-700 hover:bg-slate-600 active:bg-indigo-600 text-slate-100 font-bold text-2xl py-3.5 rounded-xl shadow-md border border-slate-600/50">6</button>
+
+                    <button onclick="pressKey('1')" class="key-btn bg-slate-700 hover:bg-slate-600 active:bg-indigo-600 text-slate-100 font-bold text-2xl py-3.5 rounded-xl shadow-md border border-slate-600/50">1</button>
+                    <button onclick="pressKey('2')" class="key-btn bg-slate-700 hover:bg-slate-600 active:bg-indigo-600 text-slate-100 font-bold text-2xl py-3.5 rounded-xl shadow-md border border-slate-600/50">2</button>
+                    <button onclick="pressKey('3')" class="key-btn bg-slate-700 hover:bg-slate-600 active:bg-indigo-600 text-slate-100 font-bold text-2xl py-3.5 rounded-xl shadow-md border border-slate-600/50">3</button>
+
+                    <button onclick="pressKey('-')" class="key-btn bg-slate-700/80 hover:bg-slate-600 text-slate-300 font-bold text-xl py-3.5 rounded-xl shadow-md border border-slate-600/50">±</button>
+                    <button onclick="pressKey('0')" class="key-btn bg-slate-700 hover:bg-slate-600 active:bg-indigo-600 text-slate-100 font-bold text-2xl py-3.5 rounded-xl shadow-md border border-slate-600/50">0</button>
+                    <button onclick="pressKey('.')" class="key-btn bg-slate-700/80 hover:bg-slate-600 text-slate-300 font-bold text-xl py-3.5 rounded-xl shadow-md border border-slate-600/50">.</button>
+                </div>
+
+                <!-- Control Buttons: Clear, Backspace, Submit Number -->
+                <div class="grid grid-cols-3 gap-2.5 pt-1">
+                    <button onclick="clearInput()" class="key-btn bg-rose-950/50 hover:bg-rose-900/60 text-rose-300 font-semibold text-sm py-2.5 rounded-xl border border-rose-800/40">
+                        <i class="fa-solid fa-trash-can mr-1"></i> Clear
+                    </button>
+                    <button onclick="backspace()" class="key-btn bg-amber-950/50 hover:bg-amber-900/60 text-amber-300 font-semibold text-sm py-2.5 rounded-xl border border-amber-800/40">
+                        <i class="fa-solid fa-delete-left mr-1"></i> Del
+                    </button>
+                    <button onclick="submitNumericAnswer()" class="key-btn bg-indigo-600 hover:bg-indigo-500 active:bg-indigo-700 text-white font-bold text-sm py-2.5 rounded-xl shadow-lg shadow-indigo-600/30 flex items-center justify-center gap-1">
+                        Send <i class="fa-solid fa-paper-plane text-xs"></i>
+                    </button>
+                </div>
+
+                <div class="relative flex py-1 items-center">
+                    <div class="flex-grow border-t border-slate-700"></div>
+                    <span class="flex-shrink mx-3 text-slate-500 text-xs font-semibold tracking-wider">OR YES / NO</span>
+                    <div class="flex-grow border-t border-slate-700"></div>
+                </div>
+
+                <!-- YES / NO Buttons -->
+                <div class="grid grid-cols-2 gap-3">
+                    <button onclick="submitYesNo('YES')" class="key-btn bg-emerald-600 hover:bg-emerald-500 text-white font-black text-xl py-3.5 rounded-xl shadow-lg shadow-emerald-900/30 border border-emerald-500/30 flex items-center justify-center gap-2">
+                        <i class="fa-solid fa-circle-check"></i> YES
+                    </button>
+                    <button onclick="submitYesNo('NO')" class="key-btn bg-rose-600 hover:bg-rose-500 text-white font-black text-xl py-3.5 rounded-xl shadow-lg shadow-rose-900/30 border border-rose-500/30 flex items-center justify-center gap-2">
+                        <i class="fa-solid fa-circle-xmark"></i> NO
+                    </button>
+                </div>
+            </div>
+
+            <!-- Confidentiality Notice -->
+            <p class="text-center text-xs text-slate-500 pt-1">
+                <i class="fa-solid fa-user-shield text-slate-400 mr-1"></i> 100% Anonymous. No name or ID stored.
+            </p>
+        </div>
+
+
+        <!-- ========================================================================= -->
+        <!-- TEACHER DASHBOARD VIEW -->
+        <!-- ========================================================================= -->
+        <div id="teacher-view" class="w-full space-y-4 hidden max-w-xl mx-auto">
+
+            <!-- Control Box: Broadcast Question -->
+            <div class="bg-slate-800 rounded-2xl p-4 border border-slate-700 shadow-xl space-y-3">
+                <div class="flex justify-between items-center">
+                    <h2 class="text-sm font-bold text-indigo-400 uppercase tracking-wider flex items-center gap-1.5">
+                        <i class="fa-solid fa-bullhorn"></i> Ask Classroom
+                    </h2>
+                    <span class="text-xs bg-indigo-950 text-indigo-300 px-2.5 py-1 rounded-full font-mono border border-indigo-800/50">
+                        Room Code: <strong class="text-white">101</strong>
+                    </span>
+                </div>
+
+                <div class="flex gap-2">
+                    <input type="text" id="teacher-question-input" placeholder="Enter question (e.g., 'What is 15 × 12?' or 'Is x=3 correct?')" 
+                        class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3.5 py-2.5 text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-indigo-500 transition">
+                    <button onclick="broadcastQuestion()" class="bg-indigo-600 hover:bg-indigo-500 text-white px-4 py-2.5 rounded-xl text-sm font-bold shadow-md shrink-0 flex items-center gap-1.5">
+                        <i class="fa-solid fa-paper-plane"></i> Ask
+                    </button>
+                </div>
+
+                <!-- Quick Prompt Presets -->
+                <div class="flex gap-2 overflow-x-auto pb-1 text-xs">
+                    <span class="text-slate-400 py-1 font-medium">Quick Prompts:</span>
+                    <button onclick="setPreset('Solve for x')" class="bg-slate-700 hover:bg-slate-600 text-slate-200 px-2.5 py-1 rounded-lg shrink-0">Solve for x</button>
+                    <button onclick="setPreset('Is this statement True?')" class="bg-slate-700 hover:bg-slate-600 text-slate-200 px-2.5 py-1 rounded-lg shrink-0">True / False?</button>
+                    <button onclick="setPreset('What is the gradient m?')" class="bg-slate-700 hover:bg-slate-600 text-slate-200 px-2.5 py-1 rounded-lg shrink-0">Gradient (m)?</button>
+                </div>
+            </div>
+
+            <!-- Stats Header -->
+            <div class="grid grid-cols-2 gap-3">
+                <div class="bg-slate-800 rounded-2xl p-4 border border-slate-700 text-center">
+                    <div class="text-xs font-semibold text-slate-400 uppercase">Total Answers</div>
+                    <div id="stat-total" class="text-3xl font-extrabold text-white mt-1">0</div>
+                </div>
+                <div class="bg-slate-800 rounded-2xl p-4 border border-slate-700 text-center">
+                    <div class="text-xs font-semibold text-slate-400 uppercase">Most Frequent</div>
+                    <div id="stat-top" class="text-3xl font-extrabold text-emerald-400 mt-1">-</div>
+                </div>
+            </div>
+
+            <!-- Realtime Response Chart & List -->
+            <div class="bg-slate-800 rounded-2xl p-4 border border-slate-700 shadow-xl space-y-4">
+                <div class="flex justify-between items-center">
+                    <h3 class="text-sm font-bold text-slate-200 flex items-center gap-2">
+                        <i class="fa-solid fa-chart-column text-indigo-400"></i> Live Response Breakdown
+                    </h3>
+                    <button onclick="resetResponses()" class="text-xs bg-slate-700 hover:bg-slate-600 text-slate-300 px-2.5 py-1 rounded-lg transition">
+                        <i class="fa-solid fa-rotate-right mr-1"></i> Clear Results
+                    </button>
+                </div>
+
+                <!-- Chart Container -->
+                <div class="h-48 w-full relative">
+                    <canvas id="responseChart"></canvas>
+                </div>
+
+                <!-- Live Feed List -->
+                <div>
+                    <h4 class="text-xs font-bold text-slate-400 uppercase mb-2">Recent Submissions (Anonymous)</h4>
+                    <div id="submission-list" class="bg-slate-900 rounded-xl p-3 max-h-36 overflow-y-auto space-y-1.5 text-sm font-mono border border-slate-950">
+                        <div class="text-slate-500 text-xs text-center py-2 italic">No responses received yet</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="text-center py-3 text-xs text-slate-600 border-t border-slate-800/60 mt-auto">
+        MathPad Live • Minimalist & Anonymous Math Classroom Input System
+    </footer>
+
+    <!-- Application Script -->
+    <script>
+        // Shared State (Simulating a real-time room websocket in memory)
+        const store = {
+            currentQuestion: "What is 7 + 8?",
+            responses: [] // Array of string values e.g., ['15', 'YES', '15']
+        };
+
+        // Student keypad current entry
+        let studentCurrentInput = "0";
+        let hasSubmittedCurrent = false;
+
+        // Chart Instance
+        let chartInstance = null;
+
+        // Initialize App
+        window.addEventListener('load', () => {
+            initChart();
+            updateStudentUI();
+            
+            // Simulated dummy responses for initial teacher view demonstration
+            store.responses = ['15', '15', '14', 'YES', '15', 'YES', 'NO'];
+            updateTeacherUI();
+        });
+
+        // Mode Switcher (Student / Teacher)
+        function switchMode(mode) {
+            const studentView = document.getElementById('student-view');
+            const teacherView = document.getElementById('teacher-view');
+            const studentBtn = document.getElementById('mode-student-btn');
+            const teacherBtn = document.getElementById('mode-teacher-btn');
+
+            if (mode === 'student') {
+                studentView.classList.remove('hidden');
+                teacherView.classList.add('hidden');
+
+                studentBtn.className = "px-4 py-1.5 rounded-lg text-sm font-semibold transition-all bg-indigo-600 text-white shadow-md";
+                teacherBtn.className = "px-4 py-1.5 rounded-lg text-sm font-semibold transition-all text-slate-400 hover:text-slate-200";
+            } else {
+                teacherView.classList.remove('hidden');
+                studentView.classList.add('hidden');
+
+                teacherBtn.className = "px-4 py-1.5 rounded-lg text-sm font-semibold transition-all bg-indigo-600 text-white shadow-md";
+                studentBtn.className = "px-4 py-1.5 rounded-lg text-sm font-semibold transition-all text-slate-400 hover:text-slate-200";
+                
+                // Refresh chart layout when switching to teacher view
+                if(chartInstance) chartInstance.update();
+            }
+        }
+
+        // Keypad Logic
+        function pressKey(val) {
+            if (hasSubmittedCurrent) resetSubmissionState();
+
+            if (val === '-') {
+                // Toggle negative sign
+                if (studentCurrentInput.startsWith('-')) {
+                    studentCurrentInput = studentCurrentInput.substring(1);
+                } else {
+                    if (studentCurrentInput !== "0") {
+                        studentCurrentInput = '-' + studentCurrentInput;
+                    }
+                }
+            } else if (val === '.') {
+                // Avoid multiple decimals
+                if (!studentCurrentInput.includes('.')) {
+                    studentCurrentInput += '.';
+                }
+            } else {
+                // Digits
+                if (studentCurrentInput === "0" || studentCurrentInput === "-0") {
+                    studentCurrentInput = (studentCurrentInput.startsWith('-') ? '-' : '') + val;
+                } else if (studentCurrentInput.length < 10) { // Limit length
+                    studentCurrentInput += val;
+                }
+            }
+            updateDisplay();
+        }
+
+        function clearInput() {
+            studentCurrentInput = "0";
+            updateDisplay();
+        }
+
+        function backspace() {
+            if (hasSubmittedCurrent) resetSubmissionState();
+
+            if (studentCurrentInput.length === 1 || (studentCurrentInput.length === 2 && studentCurrentInput.startsWith('-'))) {
+                studentCurrentInput = "0";
+            } else {
+                studentCurrentInput = studentCurrentInput.slice(0, -1);
+            }
+            updateDisplay();
+        }
+
+        function updateDisplay() {
+            document.getElementById('student-input').innerText = studentCurrentInput;
+        }
+
+        function resetSubmissionState() {
+            hasSubmittedCurrent = false;
+            document.getElementById('submitted-badge').classList.add('hidden');
+            document.getElementById('response-status').innerText = "READY";
+            document.getElementById('response-status').className = "bg-slate-700 text-slate-300 px-2 py-0.5 rounded-full text-[10px]";
+        }
+
+        // Submit Numeric Answer
+        function submitNumericAnswer() {
+            if (!studentCurrentInput) return;
+            registerAnswer(studentCurrentInput);
+        }
+
+        // Submit YES / NO Answer
+        function submitYesNo(value) {
+            registerAnswer(value);
+        }
+
+        // Register Answer to Global Store
+        function registerAnswer(answerVal) {
+            store.responses.push(answerVal);
+            hasSubmittedCurrent = true;
+
+            // UI Feedback for student
+            document.getElementById('submitted-badge').classList.remove('hidden');
+            document.getElementById('response-status').innerText = "SUBMITTED";
+            document.getElementById('response-status').className = "bg-emerald-900/80 text-emerald-300 px-2 py-0.5 rounded-full text-[10px] font-bold";
+
+            // Update Teacher View Analytics
+            updateTeacherUI();
+        }
+
+        // Teacher: Set Preset
+        function setPreset(text) {
+            document.getElementById('teacher-question-input').value = text;
+        }
+
+        // Teacher: Broadcast New Question
+        function broadcastQuestion() {
+            const input = document.getElementById('teacher-question-input');
+            const q = input.value.trim();
+            if (!q) return;
+
+            store.currentQuestion = q;
+            store.responses = []; // Reset responses for new question
+            
+            updateStudentUI();
+            updateTeacherUI();
+
+            input.value = '';
+        }
+
+        // Teacher: Reset Responses
+        function resetResponses() {
+            store.responses = [];
+            updateTeacherUI();
+        }
+
+        // Update Student Prompt Text
+        function updateStudentUI() {
+            document.getElementById('current-question-text').innerText = store.currentQuestion;
+            resetSubmissionState();
+            clearInput();
+        }
+
+        // Update Teacher Visualizations & Stats
+        function updateTeacherUI() {
+            // Stats
+            const total = store.responses.length;
+            document.getElementById('stat-total').innerText = total;
+
+            // Calculate Frequency
+            const counts = {};
+            store.responses.forEach(r => counts[r] = (counts[r] || 0) + 1);
+
+            // Determine Most Frequent
+            let topVal = "-";
+            let maxCount = 0;
+            for (const [val, count] of Object.entries(counts)) {
+                if (count > maxCount) {
+                    maxCount = count;
+                    topVal = val;
+                }
+            }
+            document.getElementById('stat-top').innerText = topVal;
+
+            // Update Live List
+            const listContainer = document.getElementById('submission-list');
+            if (store.responses.length === 0) {
+                listContainer.innerHTML = '<div class="text-slate-500 text-xs text-center py-2 italic">No responses received yet</div>';
+            } else {
+                listContainer.innerHTML = store.responses.slice().reverse().map((r, i) => `
+                    <div class="flex justify-between items-center py-1 px-2 rounded bg-slate-800/80 border border-slate-700/50">
+                        <span class="text-slate-400 text-xs">#${store.responses.length - i} Anonymous</span>
+                        <span class="font-bold ${r === 'YES' ? 'text-emerald-400' : r === 'NO' ? 'text-rose-400' : 'text-indigo-300'}">${r}</span>
+                    </div>
+                `).join('');
+            }
+
+            // Update Chart
+            updateChart(counts);
+        }
+
+        // Chart.js Initialization and Update
+        function initChart() {
+            const ctx = document.getElementById('responseChart').getContext('2d');
+            chartInstance = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: [],
+                    datasets: [{
+                        label: 'Votes',
+                        data: [],
+                        backgroundColor: [
+                            'rgba(99, 102, 241, 0.85)',
+                            'rgba(16, 185, 129, 0.85)',
+                            'rgba(244, 63, 94, 0.85)',
+                            'rgba(245, 158, 11, 0.85)',
+                            'rgba(14, 165, 233, 0.85)',
+                            'rgba(168, 85, 247, 0.85)'
+                        ],
+                        borderRadius: 8,
+                        borderWidth: 0
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: { precision: 0, color: '#94a3b8' },
+                            grid: { color: 'rgba(51, 65, 85, 0.4)' }
+                        },
+                        x: {
+                            ticks: { color: '#e2e8f0', font: { weight: 'bold' } },
+                            grid: { display: false }
+                        }
+                    }
+                }
+            });
+        }
+
+        function updateChart(counts) {
+            if (!chartInstance) return;
+
+            const labels = Object.keys(counts);
+            const data = Object.values(counts);
+
+            chartInstance.data.labels = labels;
+            chartInstance.data.datasets[0].data = data;
+            chartInstance.update();
+        }
+    </script>
+</body>
+</html>
