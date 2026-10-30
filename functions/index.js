@@ -4,7 +4,7 @@ const {getAuth}=require("firebase-admin/auth");
 const {getFirestore,FieldValue}=require("firebase-admin/firestore");
 const crypto=require("node:crypto");
 initializeApp();
-const db=getFirestore(),REGION="asia-southeast1",TEACHER_UID="numvote-teacher",TEACHER_PIN="CHANGE_ME";
+const db=getFirestore(),REGION="asia-southeast1",TEACHER_UID="numvote-teacher",TEACHER_PIN="1234";
 function teacher(r){if(!r.auth||r.auth.uid!==TEACHER_UID||r.auth.token.teacher!==true)throw new HttpsError("permission-denied","Teacher access required.");}
 function signed(r){if(!r.auth)throw new HttpsError("unauthenticated","Sign in is required.");}
 function validId(v){return typeof v==="string"&&/^[A-Za-z0-9_-]{12,80}$/.test(v);}
