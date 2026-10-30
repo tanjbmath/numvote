@@ -1,20 +1,17 @@
 const {onCall,HttpsError}=require("firebase-functions/v2/https");
-const {defineSecret}=require("firebase-functions/params");
 const {initializeApp}=require("firebase-admin/app");
 const {getAuth}=require("firebase-admin/auth");
 const {getFirestore,FieldValue}=require("firebase-admin/firestore");
 const crypto=require("node:crypto");
 initializeApp();
-const db=getFirestore(),pinSecret=defineSecret("TEACHER_PIN"),REGION="asia-southeast1",TEACHER_UID="numvote-teacher";
+const db=getFirestore(),REGION="asia-southeast1",TEACHER_UID="numvote-teacher",TEACHER_PIN="CHANGE_ME";
 function teacher(r){if(!r.auth||r.auth.uid!==TEACHER_UID||r.auth.token.teacher!==true)throw new HttpsError("permission-denied","Teacher access required.");}
 function signed(r){if(!r.auth)throw new HttpsError("unauthenticated","Sign in is required.");}
 function validId(v){return typeof v==="string"&&/^[A-Za-z0-9_-]{12,80}$/.test(v);}
 function answerId(v){return crypto.createHash("sha256").update(v).digest("hex");}
-exports.loginTeacher=onCall({region:REGION,secrets:[pinSecret]},async r=>{
- const pin=typeof r.data?.pin==="string"?r.data.pin:"",ip=String(r.rawRequest?.ip||"unknown"),key=crypto.createHash("sha256").update(ip).digest("hex"),ref=db.doc("numvotePrivate/pinAttempts_"+key),now=Date.now();
- const allowed=await db.runTransaction(async tx=>{const s=await tx.get(ref),d=s.exists?s.data():{},start=d.windowStart||now,n=now-start>900000?0:(d.attempts||0);if(n>=8)return false;if(pin!==pinSecret.value())tx.set(ref,{windowStart:n===0?now:start,attempts:n+1,updatedAt:FieldValue.serverTimestamp()});else tx.delete(ref);return true;});
- if(!allowed)throw new HttpsError("resource-exhausted","Too many attempts. Try again later.");
- if(pin!==pinSecret.value())throw new HttpsError("permission-denied","Incorrect PIN.");
+exports.loginTeacher=onCall({region:REGION},async r=>{
+ const pin=typeof r.data?.pin==="string"?r.data.pin:"";
+ if(pin!==TEACHER_PIN)throw new HttpsError("permission-denied","Incorrect PIN.");
  return {token:await getAuth().createCustomToken(TEACHER_UID,{teacher:true})};
 });
 exports.createSession=onCall({region:REGION},async r=>{teacher(r);const id=crypto.randomBytes(18).toString("base64url");await db.doc("sessions/"+id).create({questionText:"",showQuestion:true,acceptResponses:true,totalAnswers:0,createdAt:FieldValue.serverTimestamp(),updatedAt:FieldValue.serverTimestamp()});return {sessionId:id};});
