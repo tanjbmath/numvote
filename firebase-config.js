@@ -1,9 +1,10 @@
 // Replace with the web app configuration from your dedicated Numvote Firebase project.
 export const firebaseConfig = {
-  apiKey: "REPLACE_WITH_NUMVOTE_API_KEY",
-  authDomain: "REPLACE_WITH_NUMVOTE_PROJECT_ID.firebaseapp.com",
-  projectId: "REPLACE_WITH_NUMVOTE_PROJECT_ID",
-  storageBucket: "REPLACE_WITH_NUMVOTE_PROJECT_ID.appspot.com",
-  messagingSenderId: "REPLACE_WITH_NUMVOTE_MESSAGING_SENDER_ID",
-  appId: "REPLACE_WITH_NUMVOTE_APP_ID"
+  apiKey: "AIzaSyDSo95Z8f69oioBxoSxvXnjd1u-BX9HzW4",
+  authDomain: "numvote-tanjb.firebaseapp.com",
+  projectId: "numvote-tanjb",
+  storageBucket: "numvote-tanjb.firebasestorage.app",
+  messagingSenderId: "362930597647",
+  appId: "1:362930597647:web:7abd6cbda378bab4e8d87a",
+  measurementId: "G-VL4HMF40RX"
 };
