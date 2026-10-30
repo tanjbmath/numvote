@@ -22,7 +22,9 @@ import {getFunctions,httpsCallable} from "https://www.gstatic.com/firebasejs/11.
 import {firebaseConfig} from "./firebase-config.js";
 const $=id=>document.getElementById(id),app=initializeApp(firebaseConfig),auth=getAuth(app),db=getFirestore(app),functions=getFunctions(app,"asia-southeast1"),call=n=>httpsCallable(functions,n);
 let sessionId=new URLSearchParams(location.search).get("session"),sessionUnsub=null,countsUnsub=null,num="0",hasResponded=false,submitting=false;
-const show=(id,v)=>$(id).classList.toggle("hidden",!v),status=(id,msg,kind="")=>{$(id).textContent=msg;$(id).className="status "+kind;},validId=v=>typeof v==="string"&&/^[A-Za-z0-9_-]{12,80}$/.test(v);\nfunction responseControls(disabled){document.querySelectorAll("[data-key],#clear,#backspace,#send-number,#send-yes,#send-no").forEach(b=>b.disabled=disabled);}\nfunction markResponded(){hasResponded=true;responseControls(true);status("student-status","Your response has been recorded. You can only respond once.","success");}
+const show=(id,v)=>$(id).classList.toggle("hidden",!v),status=(id,msg,kind="")=>{$(id).textContent=msg;$(id).className="status "+kind;},validId=v=>typeof v==="string"&&/^[A-Za-z0-9_-]{12,80}$/.test(v);
+function responseControls(disabled){document.querySelectorAll("[data-key],#clear,#backspace,#send-number,#send-yes,#send-no").forEach(b=>b.disabled=disabled);}
+function markResponded(){hasResponded=true;responseControls(true);status("student-status","Your response has been recorded. You can only respond once.","success");}
 function stop(){if(sessionUnsub)sessionUnsub();if(countsUnsub)countsUnsub();sessionUnsub=countsUnsub=null;}
 function listenStudent(id){stop();sessionUnsub=onSnapshot(doc(db,"sessions",id),s=>{if(!s.exists()){$("student-question").textContent="This session is no longer available.";return;}const d=s.data();$("student-question").textContent=d.showQuestion&&d.questionText?d.questionText:" ";$("student-connection").textContent="CONNECTED";},()=>{$("student-connection").textContent="OFFLINE";});}
 function esc(s){return String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));}
