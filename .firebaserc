@@ -1,0 +1,14 @@
+{
+  "projects": {
+    "default": "numvote-tanjb"
+  },
+  "targets": {
+    "numvote-tanjb": {
+      "hosting": {
+        "production": [
+          "numvote"
+        ]
+      }
+    }
+  }
+}
