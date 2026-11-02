@@ -21,7 +21,7 @@ import {getFirestore,doc,collection,query,orderBy,limit,onSnapshot,getDocFromSer
 import {getFunctions,httpsCallable} from "https://www.gstatic.com/firebasejs/11.10.0/firebase-functions.js";
 import {firebaseConfig} from "./firebase-config.js";
 const $=id=>document.getElementById(id),app=initializeApp(firebaseConfig),auth=getAuth(app),db=getFirestore(app),functions=getFunctions(app,"asia-southeast1"),call=n=>httpsCallable(functions,n);
-let sessionId=new URLSearchParams(location.search).get("session"),sessionUnsub=null,countsUnsub=null,num="0",hasResponded=false,submitting=false,lastResetVersion=null,lastSeenTotalAnswers=null;
+let sessionId=new URLSearchParams(location.search).get("session"),sessionUnsub=null,countsUnsub=null,num="0",hasResponded=false,submitting=false,lastResetVersion=null,lastSeenTotalAnswers=null,studentSyncInFlight=false;
 const show=(id,v)=>$(id).classList.toggle("hidden",!v),status=(id,msg,kind="")=>{$(id).textContent=msg;$(id).className="status "+kind;},validId=v=>typeof v==="string"&&/^[A-Za-z0-9_-]{12,80}$/.test(v);
 function responseControls(disabled){document.querySelectorAll("[data-key],#clear,#backspace,#send-number,#send-yes,#send-no").forEach(b=>b.disabled=disabled);}
 function markResponded(){hasResponded=true;responseControls(true);status("student-status","Your response has been recorded. You can only respond once.","success");}
